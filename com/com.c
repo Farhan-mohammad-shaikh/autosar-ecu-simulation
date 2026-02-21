@@ -1,6 +1,8 @@
 #include "com.h"
+#include "../pdur/PduR.h"
 
 static uint8_t  Com_TxIpduBuf[8]; 
+static uint16_t COM_IPDU_LEN = 8u;
 
 uint16_t Speed_Buffer;
 bool updated_flag;
@@ -8,11 +10,10 @@ uint16_t Speed_AgeTicks = 0;
 static void EnterExclusiveArea(void) { /* simulate */ }
 static void ExitExclusiveArea(void)  { /* simulate */ }
 
-
 void Com_Init(void)
 {
     EnterExclusiveArea();
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < COM_IPDU_LEN; i++)
     {
         Com_TxIpduBuf[i] = 0u;
     }
@@ -39,7 +40,12 @@ void Com_SendVehicleSpeed (uint16_t speed)
     Com_TxIpduBuf[1]= (uint8_t)((speed >> 8) & 0xFF);
     updated_flag = true;
     Speed_AgeTicks = 0;
+    PduInfoType pdu;
+    pdu.SduDataPtr = Com_TxIpduBuf;
+    pdu.SduLength = COM_IPDU_LEN;
     ExitExclusiveArea();
+
+    PduR_ComTransmit(0u, &pdu);
 }
 bool Com_ReceiveVehicleSpeed (uint16_t *speed, uint16_t *ageTicks)
 {
